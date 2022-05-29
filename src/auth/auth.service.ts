@@ -9,11 +9,13 @@ import { compare, genSalt, hash } from 'bcryptjs'
 
 import { UserModel } from 'src/user/user.model'
 import { AuthDto } from './dto/auth.dto'
+import { JwtService } from '@nestjs/jwt'
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectModel(UserModel) private readonly UserModel: ModelType<UserModel>
+    @InjectModel(UserModel) private readonly UserModel: ModelType<UserModel>,
+    private readonly jwtService: JwtService
   ) {}
 
   async login(dto: AuthDto) {
@@ -44,5 +46,11 @@ export class AuthService {
     if (!isValidPassword) throw new UnauthorizedException('Invalid password')
 
     return user
+  }
+
+  async issueTokenPair(userId: string) {
+    const data = { _id: userId }
+
+    const refreshToken = this.jwtService
   }
 }
