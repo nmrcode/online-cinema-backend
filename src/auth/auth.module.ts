@@ -6,9 +6,10 @@ import { UserModel } from '../user/user.model'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 import { getJWTConfig } from '../config/jwt.config'
+import { JwtStrategy } from './strategies/jwt.strategy'
 
 @Module({
-  providers: [AuthService],
+  providers: [AuthService, JwtStrategy],
   imports: [
     TypegooseModule.forFeature([
       {
