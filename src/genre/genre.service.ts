@@ -41,12 +41,12 @@ export class GenreService {
   }
 
   async getCollections() {
-    const genres = await this.getAll()
-    const collections = genres
-    return collections
+    // const genres = await this.getAll()
+    // const collections = genres
+    // return collections
   }
 
-  /*Admin place*/
+  /*Admin*/
   async byId(_id: string) {
     const genre = await this.GenreModel.findById(_id)
     if (!genre) throw new NotFoundException('Genre not found')
