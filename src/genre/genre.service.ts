@@ -4,11 +4,14 @@ import { ModelType } from '@typegoose/typegoose/lib/types'
 import { genSalt, hash } from 'bcryptjs'
 import { GenreModel } from './genre.model'
 import { CreateGenreDto } from './dto/create-genre.dto'
+import { MovieService } from '../movie/movie.service'
+import { ICollection } from './genre.interface'
 
 @Injectable()
 export class GenreService {
   constructor(
-    @InjectModel(GenreModel) private readonly GenreModel: ModelType<GenreModel>
+    @InjectModel(GenreModel) private readonly GenreModel: ModelType<GenreModel>,
+    private readonly movieService: MovieService
   ) {}
 
   async bySlug(slug: string) {
@@ -45,9 +48,22 @@ export class GenreService {
   }
 
   async getCollections() {
-    // const genres = await this.getAll()
-    // const collections = genres
-    // return collections
+    const genres = await this.getAll()
+    const collections = await Promise.all(
+      genres.map(async (genre) => {
+        const moviesByGenre = await this.movieService.byGenres([genre._id])
+
+        const result: ICollection = {
+          _id: String(genre._id),
+          image: moviesByGenre[0].bigPoster,
+          slug: genre.slug,
+          title: genre.name,
+        }
+
+        return result
+      })
+    )
+    return collections
   }
 
   /*Admin*/
