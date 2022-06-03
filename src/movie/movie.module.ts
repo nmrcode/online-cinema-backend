@@ -3,6 +3,7 @@ import { MovieController } from './movie.controller'
 import { MovieService } from './movie.service'
 import { TypegooseModule } from 'nestjs-typegoose'
 import { MovieModel } from './movie.model'
+import { RatingService } from '../rating/rating.service'
 
 @Module({
   controllers: [MovieController],
@@ -17,5 +18,6 @@ import { MovieModel } from './movie.model'
     ]),
   ],
   providers: [MovieService],
+  exports: [MovieService],
 })
 export class MovieModule {}
