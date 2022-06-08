@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common'
-import { MovieController } from './movie.controller'
-import { MovieService } from './movie.service'
 import { TypegooseModule } from 'nestjs-typegoose'
+import { UserModule } from 'src/user/user.module'
+import { MovieController } from './movie.controller'
 import { MovieModel } from './movie.model'
-import { RatingService } from '../rating/rating.service'
+import { MovieService } from './movie.service'
 
 @Module({
   controllers: [MovieController],
@@ -16,6 +16,7 @@ import { RatingService } from '../rating/rating.service'
         },
       },
     ]),
+    UserModule,
   ],
   providers: [MovieService],
   exports: [MovieService],

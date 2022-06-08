@@ -1,15 +1,15 @@
 import { Module } from '@nestjs/common'
-import { AuthService } from './auth.service'
-import { AuthController } from './auth.controller'
-import { TypegooseModule } from 'nestjs-typegoose'
-import { UserModel } from '../user/user.model'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
-import { getJWTConfig } from '../config/jwt.config'
+import { TypegooseModule } from 'nestjs-typegoose'
+import { getJWTConfig } from 'src/config/jwt.conig'
 import { JwtStrategy } from './strategies/jwt.strategy'
+import { AuthController } from './auth.controller'
+import { UserModel } from '../user/user.model'
+import { AuthService } from './auth.service'
 
 @Module({
-  providers: [AuthService, JwtStrategy],
+  controllers: [AuthController],
   imports: [
     TypegooseModule.forFeature([
       {
@@ -26,6 +26,6 @@ import { JwtStrategy } from './strategies/jwt.strategy'
       useFactory: getJWTConfig,
     }),
   ],
-  controllers: [AuthController],
+  providers: [AuthService, JwtStrategy],
 })
 export class AuthModule {}

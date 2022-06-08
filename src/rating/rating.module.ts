@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common'
-import { RatingController } from './rating.controller'
 import { RatingService } from './rating.service'
+import { RatingController } from './rating.controller'
 import { TypegooseModule } from 'nestjs-typegoose'
 import { RatingModel } from './rating.model'
-import { MovieModule } from '../movie/movie.module'
+import { MovieModule } from 'src/movie/movie.module'
 
 @Module({
   controllers: [RatingController],

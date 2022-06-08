@@ -1,31 +1,23 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
+import { DocumentType, ModelType } from '@typegoose/typegoose/lib/types'
+import { Types } from 'mongoose'
 import { InjectModel } from 'nestjs-typegoose'
-import { ModelType } from '@typegoose/typegoose/lib/types'
-import { genSalt, hash } from 'bcryptjs'
-import { GenreModel } from './genre.model'
+import { MovieService } from 'src/movie/movie.service'
 import { CreateGenreDto } from './dto/create-genre.dto'
-import { MovieService } from '../movie/movie.service'
-import { ICollection } from './genre.interface'
+import { GenreModel } from './genre.model'
+import { ICollection } from './interfaces/genre.interface'
 
 @Injectable()
 export class GenreService {
   constructor(
-    @InjectModel(GenreModel) private readonly GenreModel: ModelType<GenreModel>,
+    @InjectModel(GenreModel) private readonly genreModel: ModelType<GenreModel>,
     private readonly movieService: MovieService
   ) {}
 
-  async bySlug(slug: string) {
-    const doc = await this.GenreModel.findOne({ slug }).exec()
-
-    if (!doc) throw new NotFoundException('Genre not found')
-
-    return doc
-  }
-
-  async getAll(searchTerm?: string) {
+  async getAll(searchTerm?: string): Promise<DocumentType<GenreModel>[]> {
     let options = {}
 
-    if (searchTerm)
+    if (searchTerm) {
       options = {
         $or: [
           {
@@ -39,71 +31,73 @@ export class GenreService {
           },
         ],
       }
-    return this.GenreModel.find(options)
+    }
+
+    return this.genreModel
+      .find(options)
       .select('-updatedAt -__v')
-      .sort({
-        createdAt: 'desc',
-      })
+      .sort({ createdAt: 'desc' })
       .exec()
   }
 
-  async getCollections() {
+  async bySlug(slug: string): Promise<DocumentType<GenreModel>> {
+    return this.genreModel.findOne({ slug }).exec()
+  }
+
+  async getPopular(): Promise<DocumentType<GenreModel>[]> {
+    return this.genreModel
+      .find()
+      .select('-updatedAt -__v')
+      .sort({ createdAt: 'desc' })
+      .exec()
+  }
+
+  async getCollections(): Promise<ICollection[]> {
     const genres = await this.getAll()
+
     const collections = await Promise.all(
       genres.map(async (genre) => {
         const moviesByGenre = await this.movieService.byGenres([genre._id])
 
         const result: ICollection = {
           _id: String(genre._id),
-          image: moviesByGenre[0].bigPoster,
-          slug: genre.slug,
           title: genre.name,
+          slug: genre.slug,
+          image: moviesByGenre[0].bigPoster,
         }
 
         return result
       })
     )
+
     return collections
   }
 
-  /*Admin*/
-  async byId(_id: string) {
-    const genre = await this.GenreModel.findById(_id)
-    if (!genre) throw new NotFoundException('Genre not found')
+  /* Admin area */
 
-    return genre
+  async byId(id: string): Promise<DocumentType<GenreModel>> {
+    return this.genreModel.findById(id).exec()
   }
 
-  async getCount() {
-    return this.GenreModel.find().count().exec()
-  }
-
-  async update(_id: string, dto: CreateGenreDto) {
-    const updateDoc = await this.GenreModel.findByIdAndUpdate(_id, dto, {
-      new: true,
-    }).exec()
-
-    if (!updateDoc) throw new NotFoundException('Genre not found')
-
-    return updateDoc
-  }
-
-  async create() {
+  async create(): Promise<Types.ObjectId> {
     const defaultValue: CreateGenreDto = {
-      name: '',
-      slug: '',
       description: '',
       icon: '',
+      name: '',
+      slug: '',
     }
-    const genre = await this.GenreModel.create(defaultValue)
+    const genre = await this.genreModel.create(defaultValue)
     return genre._id
   }
 
-  async delete(id: string) {
-    const deleteDoc = await this.GenreModel.findByIdAndDelete(id).exec()
+  async update(
+    id: string,
+    dto: CreateGenreDto
+  ): Promise<DocumentType<GenreModel> | null> {
+    return this.genreModel.findByIdAndUpdate(id, dto, { new: true }).exec()
+  }
 
-    if (!deleteDoc) throw new NotFoundException('Genre not found')
-
-    return deleteDoc
+  async delete(id: string): Promise<DocumentType<GenreModel> | null> {
+    return this.genreModel.findByIdAndDelete(id).exec()
   }
 }

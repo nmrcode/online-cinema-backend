@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   HttpCode,
+  NotFoundException,
   Param,
   Post,
   Put,
@@ -11,12 +12,10 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common'
-import { Auth } from '../auth/decorators/auth.decorator'
-import { User } from '../user/decorators/user.decorator'
-import { UpdateUserDto } from '../user/dto/update-user.dto'
-import { IdValidationPipe } from '../pipes/id.validation.pipe'
-import { GenreService } from './genre.service'
+import { Auth } from 'src/auth/decorators/Auth.decorator'
+import { IdValidationPipe } from 'src/pipes/id.validation.pipe'
 import { CreateGenreDto } from './dto/create-genre.dto'
+import { GenreService } from './genre.service'
 
 @Controller('genres')
 export class GenreController {
@@ -27,31 +26,25 @@ export class GenreController {
     return this.genreService.bySlug(slug)
   }
 
+  @Get()
+  async getAll(@Query('searchTerm') searchTerm?: string) {
+    return this.genreService.getAll(searchTerm)
+  }
+
+  @Get('/popular')
+  async getPopular() {
+    return this.genreService.getPopular()
+  }
+
   @Get('/collections')
   async getCollections() {
     return this.genreService.getCollections()
-  }
-
-  @Get('')
-  async getAll(@Query('searchTerm') searchTerm?: string) {
-    return this.genreService.getAll(searchTerm)
   }
 
   @Get(':id')
   @Auth('admin')
   async get(@Param('id', IdValidationPipe) id: string) {
     return this.genreService.byId(id)
-  }
-
-  @UsePipes(new ValidationPipe())
-  @Put(':id')
-  @HttpCode(200)
-  @Auth('admin')
-  async update(
-    @Param('id', IdValidationPipe) id: string,
-    @Body() dto: CreateGenreDto
-  ) {
-    return this.genreService.update(id, dto)
   }
 
   @UsePipes(new ValidationPipe())
@@ -62,13 +55,23 @@ export class GenreController {
     return this.genreService.create()
   }
 
-  @Delete(':id')
+  @UsePipes(new ValidationPipe())
+  @Put(':id')
   @HttpCode(200)
   @Auth('admin')
-  async delete(
+  async update(
     @Param('id', IdValidationPipe) id: string,
-    @Body() dto: UpdateUserDto
+    @Body() dto: CreateGenreDto
   ) {
-    return this.genreService.delete(id)
+    const updateGenre = await this.genreService.update(id, dto)
+    if (!updateGenre) throw new NotFoundException('Genre not found')
+    return updateGenre
+  }
+
+  @Delete(':id')
+  @Auth('admin')
+  async delete(@Param('id', IdValidationPipe) id: string) {
+    const deletedDoc = await this.genreService.delete(id)
+    if (!deletedDoc) throw new NotFoundException('Genre not found')
   }
 }

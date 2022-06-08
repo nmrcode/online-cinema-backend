@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   HttpCode,
+  NotFoundException,
   Param,
   Post,
   Put,
@@ -11,24 +12,31 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common'
-import { Auth } from '../auth/decorators/auth.decorator'
-import { IdValidationPipe } from '../pipes/id.validation.pipe'
-import { UpdateUserDto } from '../user/dto/update-user.dto'
+import { Auth } from 'src/auth/decorators/Auth.decorator'
+import { IdValidationPipe } from 'src/pipes/id.validation.pipe'
 import { ActorService } from './actor.service'
-import { ActorDto } from './dto/actor.dto'
+import { CreateActorDto } from './dto/create-actor.dto'
 
 @Controller('actors')
 export class ActorController {
   constructor(private readonly actorService: ActorService) {}
+
+  @Get()
+  async getAll(@Query('searchTerm') searchTerm?: string) {
+    return this.actorService.getAll(searchTerm)
+  }
 
   @Get('by-slug/:slug')
   async bySlug(@Param('slug') slug: string) {
     return this.actorService.bySlug(slug)
   }
 
-  @Get('')
-  async getAll(@Query('searchTerm') searchTerm?: string) {
-    return this.actorService.getAll(searchTerm)
+  @UsePipes(new ValidationPipe())
+  @Post()
+  @HttpCode(200)
+  @Auth('admin')
+  async create() {
+    return this.actorService.create()
   }
 
   @Get(':id')
@@ -43,26 +51,17 @@ export class ActorController {
   @Auth('admin')
   async update(
     @Param('id', IdValidationPipe) id: string,
-    @Body() dto: ActorDto
+    @Body() dto: CreateActorDto
   ) {
-    return this.actorService.update(id, dto)
-  }
-
-  @UsePipes(new ValidationPipe())
-  @Post()
-  @HttpCode(200)
-  @Auth('admin')
-  async create() {
-    return this.actorService.create()
+    const updateActor = await this.actorService.update(id, dto)
+    if (!updateActor) throw new NotFoundException('Actor not found')
+    return updateActor
   }
 
   @Delete(':id')
-  @HttpCode(200)
   @Auth('admin')
-  async delete(
-    @Param('id', IdValidationPipe) id: string,
-    @Body() dto: UpdateUserDto
-  ) {
-    return this.actorService.delete(id)
+  async delete(@Param('id', IdValidationPipe) id: string) {
+    const deletedDoc = await this.actorService.delete(id)
+    if (!deletedDoc) throw new NotFoundException('Actor not found')
   }
 }
